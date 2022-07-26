@@ -1,6 +1,6 @@
-# Getting Started with Create React App
+# Drunkify
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project is in the early process of conversion from raw JS to React components. As such, the React version does not have full functionality just yet, but once we're there there will be much more functionality as routing, state, and everything else becomes much simpler.
 
 ## Available Scripts
 
