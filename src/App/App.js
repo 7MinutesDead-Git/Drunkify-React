@@ -1,10 +1,19 @@
 import React, {useEffect, useState} from 'react'
 
 import Counter from "../FunStuff/Counter"
-import {sanitizeInput} from "../Helpers/helpers"
+import {sanitizeInput, toggleOpacityOnScroll} from "../Helpers/helpers"
+
+// ---------------------------------------------------------------------------
+// TODOS:
+// 1) Hide/reveal search history/suggestions on input focus.
+//      - Store/Load from localStorage().
+// 2) Make API calls for drinks/ingredients.
+// 3) Build out Drink component dynamically.
+// 4) Make API calls for ingredients clicked.
+// 5) Setup React Router so drinks can be saved/navigated to.
 
 
-// ------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 export default function App() {
     // NOTE: Components are re-rendered when state changes.
     const [searchTerm, setSearchTerm] = useState('')
@@ -17,8 +26,10 @@ export default function App() {
     }
 
     function getDrinks() {
-        console.log(`Hello from App -> SearchNav -> SearchControls -> getDrinks -> ${searchTerm}`)
+        console.log(`Hello from App -> ${searchTerm}`)
         clearScreen()
+        // TODO: Make an API call with the searchTerm.
+        // TODO: Build out the Drink component for each result.
     }
 
     function handleClearButton() {
@@ -34,6 +45,13 @@ export default function App() {
         setSearchTerm("")
     }
 
+    function handleEnterKeyDown(event) {
+        if (event.key === 'Enter') {
+            console.log("Enter key pressed")
+            getDrinks()
+        }
+    }
+
     // Ensures the search input is cleared when the user clicks the clear button.
     useEffect(() => {
         const input = document.querySelector('input')
@@ -43,11 +61,22 @@ export default function App() {
     return (
         // Check out https://reactjs.org/docs/fragments.html
         <>
-            <SearchNav
-                updateSearchInput={updateSearchInput}
-                getDrinks={getDrinks}
-                clear={handleClearButton}
-            />
+            <SearchNav>
+                <header className="nav">
+                    <label className="search-label" htmlFor="search">Search for drinks by name or ingredient.</label>
+                    <SearchControls>
+                        <section className="search-controls">
+                            <section className="searchbar">
+                                <SearchInput onChange={updateSearchInput} onKeyDown={handleEnterKeyDown}/>
+                                <SearchButton onClick={getDrinks}/>
+                                <ClearButton clear={handleClearButton}/>
+                            </section>
+                            <ul className="suggestions hidden"></ul>
+                        </section>
+                    </SearchControls>
+                    <section className="error-text"></section>
+                </header>
+            </SearchNav>
             <CocktailsView/>
             <FooterNav/>
         </>
@@ -59,15 +88,7 @@ export default function App() {
 // App Components
 const SearchNav = (props) => {
     return (
-        <header className="nav">
-            <label className="search-label" htmlFor="search">Search for drinks by name or ingredient.</label>
-            <SearchControls
-                updateSearchInput={props.updateSearchInput}
-                getDrinks={props.getDrinks}
-                clear={props.clear}
-            />
-            <section className="error-text"></section>
-        </header>
+        <>{props.children}</>
     )
 }
 
@@ -107,25 +128,19 @@ const LoadingIcon = (props) => {
 // ------------------------------------------------------------------------------------------------------------
 // SearchNav components
 const SearchControls = (props) => {
-    function handleEnterKeyDown(event) {
-        if (event.key === 'Enter') {
-            console.log("Enter key pressed")
-            props.getDrinks()
+    useEffect(() => {
+        const controlsElement = document.querySelector('.search-controls')
+        window.onscroll = () => {
+            toggleOpacityOnScroll(controlsElement)
         }
-    }
+        // Clean up on unmount.
+        return () => {
+            window.onscroll = null
+        }
+    })
 
     return (
-        <section className="search-controls">
-            <section className="searchbar">
-                <SearchInput
-                    onChange={props.updateSearchInput}
-                    onKeyDown={handleEnterKeyDown}
-                />
-                <SearchButton onClick={props.getDrinks}/>
-                <ClearButton clear={props.clear}/>
-            </section>
-            <ul className="suggestions hidden"></ul>
-        </section>
+        <>{props.children}</>
     )
 }
 
