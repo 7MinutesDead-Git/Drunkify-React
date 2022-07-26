@@ -1,0 +1,674 @@
+/******************************************
+/* CSS Reset.
+/*******************************************/
+/* http://meyerweb.com/eric/tools/css/reset/
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+body {
+  line-height: 1;
+}
+ol, ul {
+  list-style: none;
+}
+blockquote, q {
+  quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: '';
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/******************************************
+/* Helpers
+/*******************************************/
+.loading {
+  animation: blinker 1s linear infinite;
+}
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes clicked-flash {
+  100% {
+    filter: brightness(3);
+  }
+}
+
+/******************************************
+/* Search bar.
+/*******************************************/
+.search-controls {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 3rem 0 0 3rem;
+  transition: all 0.3s;
+  z-index: 1;
+  opacity: 1;
+  background-image: linear-gradient(to bottom, rgba(21,21,21,0.9) 0%, rgba(21,21,21,0) 100%);
+}
+.searchbar {
+  align-items: center;
+  justify-content: flex-start;
+  display: flex;
+  opacity: 1;
+  transition: all 0.3s;
+}
+.search-label {
+  display: block;
+  color: #9c9a9d;
+  margin: 1rem 3rem;
+  font-weight: 100;
+}
+.search-controls.hidden {
+  opacity: 0;
+  padding: 0 3rem 3rem 3rem;
+}
+input {
+  transition: all 0.3s ease-in-out;
+  border: none;
+  background: #3c3c3c;
+  color: #ff0051;
+  font-size: 2rem;
+  line-height: 2.5rem;
+  height: 2.5rem;
+  width: 40%;
+  font-weight: 100;
+  font-style: italic;
+}
+input::placeholder {
+  opacity: 1;
+  transition: all 0.3s ease-in-out;
+}
+input.hide-placeholder::placeholder {
+  opacity: 0;
+}
+input:hover {
+  background: #565656;
+}
+input:hover::placeholder {
+  color: white;
+}
+input:focus {
+  background: #181818;
+  outline: #ff0051;
+}
+input:focus::placeholder {
+  color: #181818;
+}
+button {
+  transition: all 0.3s ease-in-out;
+  border: none;
+  background: #ff0051;
+  color: #3c3c3c;
+  font-size: 1.5rem;
+  line-height: 2.5rem;
+  height: 2.5rem;
+  width: 15%;
+  font-weight: 100;
+  overflow: hidden;
+}
+button:hover {
+  background: #181818;
+  color: #ff0051;
+  transform: translateY(-5px);
+}
+button:active {
+  animation: clicked-flash 0.2s ease-in-out;
+  animation-fill-mode: forwards;
+}
+#clearCocktails {
+  background: #181818;
+  color: #7b8796;
+}
+#clearCocktails:hover {
+  background: #181818;
+  color: #ff0051;
+}
+.suggestions {
+  user-select: none;
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  color: #ff0051;
+  font-style: italic;
+  font-weight: lighter;
+  padding: 1rem 0;
+  text-decoration: underline dotted;
+  text-underline-position: under;
+  opacity: 1;
+  transition: all 0.3s ease-in-out;
+  transform: translateY(0);
+}
+.suggestions.hidden {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+/* TODO: Make media queries for suggestions box. */
+.suggestions > li {
+  margin: 0 1rem 0 0;
+  transition: all 0.3s ease-in-out;
+  text-shadow: 0 0 0.1rem #181818;
+  flex: 0 0 auto;
+}
+.suggestions > li:hover {
+  color: beige;
+  text-decoration-color: beige;
+  transform: translateY(-5px);
+}
+
+
+/******************************************
+/* Cocktail view.
+/*******************************************/
+a {
+  color: #ff0051;
+  text-decoration: dotted underline 1px;
+}
+
+body * {
+  font-family: 'JetBrains Mono', monospace;
+}
+body {
+  background: #181818;
+  font-size: 20px;
+  overflow-x: hidden;
+}
+.error-text {
+  position: absolute;
+  top: 50%;
+  left: 25%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  flex-direction: column;
+  color: #ff0051;
+  font-size: 1.5rem;
+  text-align: center;
+  transition: all 0.3s ease-in-out;
+}
+.cocktails {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+  flex-wrap: wrap;
+  margin: 8rem 12rem 3rem 2rem;
+}
+
+.drink {
+  /* Position needs to be set to anything except static, so that
+  natural z-index order is maintained on transitions. */
+  position: relative;
+  width: 16%;
+  display:flex;
+  justify-content: flex-start;
+  flex-direction: column;
+  opacity: 0;
+}
+
+.drink > img {
+  width: 20rem;
+  height: 20rem;
+  border-radius: 50%;
+  box-shadow: 0 0 5rem 0.5rem rgba(0,0,0,0.7);
+  opacity: 1;
+  transition: all 0.3s ease-in-out;
+}
+.drink > img.hidden {
+  opacity: 0;
+}
+.drink > h3 {
+  user-select: none;
+  font-size: 1.3rem;
+  font-weight: 100;
+  position: relative;
+  top: -5rem;
+  left: 2rem;
+  width: 100%;
+  color: white;
+  text-shadow: 0 0.3rem 0.3rem #000;
+}
+.drink p {
+  display: none;
+  opacity: 0;
+  color: #6b6f78;
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+}
+.drink ul {
+  display: none;
+  opacity: 0;
+  color: #7b8796;
+  line-height: 1.3;
+}
+
+/******************************************
+/* Footer.
+/*******************************************/
+footer {
+  user-select: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  font-size: 0.7rem;
+  font-weight: 100;
+  padding: 1rem;
+  color: #3c3c3c;
+  z-index: -1;
+}
+
+
+/******************************************
+/* Loading icon.
+/*******************************************/
+.lds-ellipsis {
+  display: inline-block;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.lds-ellipsis div {
+  position: absolute;
+  top: 33px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #ff0051;
+  animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+.lds-ellipsis div:nth-child(1) {
+  left: 8px;
+  animation: lds-ellipsis1 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(2) {
+  left: 8px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(3) {
+  left: 32px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(4) {
+  left: 56px;
+  animation: lds-ellipsis3 0.6s infinite;
+}
+.lds-ellipsis.visible {
+  opacity: 1;
+}
+
+/******************************************
+/* Transitions.
+/*******************************************/
+.drink,
+.drink > img,
+.drink > h3,
+.drink.viewing {
+  transition: all 0.3s ease-in-out;
+}
+.drink:hover img {
+  transform: scale(1.1) translateX(-2rem);
+}
+.drink:hover h3 {
+  left: 3rem;
+}
+
+.drink.viewing::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(22,22,22,0.95);
+  z-index: -1;
+}
+.drink.viewing a {
+  cursor: pointer;
+}
+.drink.viewing {
+  user-select: none;
+  animation: show 0.5s ease-in-out;
+  z-index: 99;
+  position: absolute;
+  top: -1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-top: 4rem;
+  transition: all 1s ease-in-out;
+}
+.drink.viewing p {
+  display: block;
+  width: 200%;
+  font-weight: 100;
+  transition: all 1s ease-in-out;
+  animation: show 2s ease-in-out 1s forwards;
+  font-style: italic;
+}
+.drink.viewing ul {
+  transition: all 1s ease-in-out;
+  display: block;
+  width: 200%;
+  font-weight: 100;
+  margin: 0 0 1rem 0;
+  animation: show 1s ease-in-out 0.5s forwards;
+}
+.drink.viewing:hover img {
+  transform: scale(1);
+}
+.drink.viewing img:hover ~ h3 {
+  transform: translateX(-0.4rem);
+}
+.drink.viewing img:hover {
+  transform: scale(1.02);
+}
+
+
+/******************************************
+/* Keyframes.
+/*******************************************/
+@keyframes show {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes lds-ellipsis1 {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes lds-ellipsis3 {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}
+@keyframes lds-ellipsis2 {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(24px, 0);
+  }
+}
+
+/******************************************
+/* Queries.
+/*******************************************/
+/* Ultrawidening. */
+@media screen and (min-aspect-ratio: 25/9) {
+  .drink {
+    width: 15%;
+  }
+}
+
+/* Approaching towards ultrawide. */
+@media screen and (min-aspect-ratio: 7/3) {
+  .cocktails {
+    margin: 4rem 12rem 3rem -3rem;
+  }
+  input {
+    width: 30%;
+  }
+  button {
+    width: 15%;
+  }
+  .drink h3 {
+    font-size: 1.2rem;
+  }
+  .drink {
+    width: 17%;
+  }
+  .drink.viewing p {
+    font-size: 0.8rem;
+  }
+  .drink.viewing ul {
+    font-size: 0.8rem;
+  }
+  .drink > img {
+    width: 30rem;
+    height: 30rem;
+  }
+  .drink > h3 {
+    top: -5rem;
+    left: 8rem;
+  }
+  .drink:hover h3 {
+    left: 9rem;
+  }
+}
+
+/* 5 drinks wide */
+@media screen and (max-aspect-ratio: 2/1) {
+  .cocktails {
+    margin: 8rem 12rem 3rem 2rem;
+  }
+  .drink {
+    width: 20%;
+  }
+  .drink > img {
+    width: 22rem;
+    height: 22rem;
+  }
+  .drink > h3 {
+    top: -5rem;
+    left: 3rem;
+    font-size: 1.5rem;
+  }
+  .drink:hover h3 {
+    left: 4rem;
+  }
+}
+
+/* 4 drinks wide */
+@media screen and (max-aspect-ratio: 5/3) {
+  .drink {
+    width: 25%;
+  }
+}
+
+/* 3 drinks wide */
+@media screen and (max-aspect-ratio: 4/3) {
+  .cocktails {
+    margin: 12rem 10rem 3rem 1rem;
+  }
+  .search-controls {
+    padding: 4rem 0 0 0;
+  }
+  .suggestions {
+    font-size: 1.5rem;
+  }
+  input, button {
+    font-size: 3rem;
+    height: 5rem;
+  }
+  input {
+    width: 60%
+  }
+  button {
+    width: 20%;
+  }
+  label[for="search"] {
+    display: none;
+  }
+  .drink {
+    width: 33%;
+  }
+  .drink h3 {
+    font-size: 1.8rem;
+  }
+  .drink.viewing img {
+    width: 60vw;
+    height: 60vw;
+  }
+  .drink.viewing > h3 {
+    font-size: 3rem;
+  }
+  .drink.viewing {
+    width: 40%;
+    padding: 0 0 0 1rem;
+    left: 0;
+    top: 0;
+    margin: 0;
+  }
+  .drink.viewing p {
+    font-size: 1.3rem;
+    color: antiquewhite;
+  }
+  .drink.viewing ul {
+    font-size: 1.1rem;
+    color: floralwhite;
+  }
+}
+
+/* 2 drinks wide */
+@media screen and (max-aspect-ratio: 10/9) {
+  .search-controls {
+    padding: 2rem 0 0 0;
+  }
+  .suggestions {
+    transform: translateY(-5rem);
+    font-size: 3rem;
+  }
+  .drink {
+    width: 50%;
+  }
+  .drink > img {
+    width: 60vw;
+    height: 60vw;
+  }
+  .drink h3 {
+    font-size: 4rem;
+  }
+  .searchbar {
+    margin: 2rem 0 0 0;
+    padding: 0 0 6rem 0;
+  }
+  label[for="search"] {
+    font-size: 2rem;
+  }
+  input {
+    width: 70%;
+    height: 5rem;
+    font-size: 4rem;
+  }
+  button {
+    width: 30%;
+    height: 5rem;
+    font-size: 3rem;
+  }
+  button#clearCocktails {
+    display:none;
+  }
+  .drink.viewing {
+    width: 80%;
+    padding: 0 0 0 1rem;
+    left: 0;
+    top: 0;
+    margin: 0;
+  }
+  .drink.viewing h3 {
+    font-size: 5rem;
+  }
+  .drink.viewing p,
+  .drink.viewing ul {
+    width: 100%;
+  }
+  .drink.viewing p {
+    font-size: 1.5rem;
+    color: antiquewhite;
+  }
+  .drink.viewing ul {
+    font-size: 1.3rem;
+    color: floralwhite;
+  }
+  .drink.viewing img {
+    width: 80vw;
+    height: 80vw;
+  }
+}
+
+/* 1 drink wide */
+@media screen and (max-aspect-ratio: 8/9) {
+  .suggestions {
+    display: none;
+  }
+  .drink {
+    width: 100%;
+  }
+  .drink.viewing {
+    width: 80%;
+  }
+  .drink.viewing > h3 {
+    font-size: 8rem;
+  }
+  .drink.viewing p {
+    font-size: 1.8rem;
+    color: floralwhite;
+  }
+  .drink.viewing ul {
+    font-size: 1.5rem;
+    color: antiquewhite;
+  }
+  .cocktails {
+    margin: 0 0 0 1rem;
+  }
+  .drink > img {
+    width: 90vw;
+    height: 90vw;
+  }
+  .drink:hover img {
+    transform: scale(1.04) translateY(-1rem);
+  }
+}
