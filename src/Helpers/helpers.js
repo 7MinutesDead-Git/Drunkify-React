@@ -12,6 +12,7 @@ export function sanitizeInput(stringInput) {
     return alphaNumericOnly.toLowerCase()
 }
 
+// -------------------------------------------------------------------------------------------
 // Show and hide an element when scrolling.
 // ie: Hide the search bar when scrolling down, but reveal it when trying to scroll back up to it.
 export function toggleOpacityOnScroll(element) {
