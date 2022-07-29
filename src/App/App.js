@@ -1,7 +1,9 @@
 import React, {useEffect, useState} from 'react'
 
+import Drink from './Drink'
 import Counter from "../FunStuff/Counter"
 import {sanitizeInput, toggleOpacityOnScroll} from "../Helpers/helpers"
+import {APIErrorHandler} from "../Helpers/APIErrorHandler"
 
 // ---------------------------------------------------------------------------
 // TODOS:
@@ -12,12 +14,21 @@ import {sanitizeInput, toggleOpacityOnScroll} from "../Helpers/helpers"
 // 4) Make API calls for ingredients clicked.
 // 5) Setup React Router so drinks can be saved/navigated to.
 
+const SEARCH_HISTORY_LIMIT = 5
+const DRINK_REVEAL_SPEED = 180  // milliseconds, lower is faster
+const AUTOSCROLL_DELAY = 75
+const errors = new APIErrorHandler()
+
 
 // ---------------------------------------------------------------------------
 export default function App() {
     // NOTE: Components are re-rendered when state changes.
     const [searchTerm, setSearchTerm] = useState('')
-    const [cocktailList, setCocktailList] = useState([])
+    const [drinkList, setDrinkList] = useState([])
+    const [loadingClassName, setLoadingClassName] = useState("lds-ellipsis")
+    const [fetchedDrinks, setFetchedDrinks] = useState([])
+    const [drinksOnDisplay, setDrinksOnDisplay] = useState({})
+    const [drinks, setDrinks] = useState([])
 
     // searchTerm is grabbed from onChange event passed down to SearchInput.
     function updateSearchInput(event) {
@@ -25,11 +36,115 @@ export default function App() {
         setSearchTerm(newSearchTerm)
     }
 
-    function getDrinks() {
+    async function getDrinks() {
         console.log(`Hello from App -> ${searchTerm}`)
         clearScreen()
-        // TODO: Make an API call with the searchTerm.
-        // TODO: Build out the Drink component for each result.
+        // TODO Store choice in localStorage to display as history.
+        // addSearchToLocalHistory(choice)
+        const drinkURL = `https://www.thecocktaildb.com/api/json/v1/1/search.php?s=${searchTerm}`
+        const ingredientURL = `https://www.thecocktaildb.com/api/json/v1/1/filter.php?i=${searchTerm}`
+        errors.clearErrors()
+        toggleLoadingIcon()
+
+        const nameResponse = fetchDrinksByName(drinkURL)
+        // TODO: I don't think await is necessary here since we Promise.allSettled() later.
+        const ingredientResponse = fetchDrinksByIngredient(ingredientURL)
+        setFetchedDrinks([nameResponse, ingredientResponse])
+        // We should wait for all drink API fetches to complete successfully, otherwise
+        // we run into issues where drinks are rendered before the API has responded,
+        // resulting in empty spaces and missing drinks/information.
+        await Promise.allSettled([nameResponse, ingredientResponse])
+         revealDrinks()
+         errors.renderErrors()
+    }
+
+    async function revealDrinks() {
+        toggleLoadingIcon()
+        for (const drink of document.querySelectorAll('.drink')) {
+            await wait(DRINK_REVEAL_SPEED)
+            drink.style.opacity = '1'
+        }
+    }
+
+    async function fetchDrinksByIngredient(idURL) {
+        try {
+            console.log('Fetching drinks by ingredient...')
+            const response = await fetch(idURL)
+            console.log(`Ingredient response: ${response.status}`)
+            errors.storeError(response.status)
+            const data = await response.json()
+            console.log(data)
+            if (data['drinks']) {
+                for (const drink of data['drinks']) {
+                    if (!(drinkExists(drink))) {
+                        const idNumber = drink['idDrink']
+                        const drinkURL = `https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i=${idNumber}`
+                        // If we were to await fetchDrinks here, each iteration of this loop will wait. May be useful in the future.
+                        // We should return this fetch response here to be used in collecting all Promises for
+                        // Promise.all() to wait for in getDrinks().
+                        fetchedDrinks.push(fetchDrinksByName(drinkURL))
+                    }
+                }
+            }
+            else {
+                errors.storeError(`Couldn't find "${searchTerm}" :(`)
+            }
+            return response
+        }
+        catch (err) {
+            console.log(`Caught this error: ${err}`)
+        }
+    }
+
+    // Retrieve drink data by name and render them on the screen.
+    // Returns the response object for managing Promises.
+    async function fetchDrinksByName(url) {
+        try {
+            console.log('Fetching drinks by name...')
+            const response = await fetch(url)
+            errors.storeError(response.status)
+
+            const data = await response.json()
+            console.log("Drink by name data:")
+            console.log(data)
+            if (data['drinks']) {
+                await renderDrinks(data)
+            }
+            else {
+                errors.storeError(`Couldn't find "${searchTerm}" :(`)
+            }
+            return response
+        }
+        catch (err) {
+            console.log(`Caught this error: ${err}`)
+            if (!window.navigator.onLine) {
+                errors.storeError('You are offline. Are you still connected to the internet?')
+            }
+        }
+    }
+
+    // Create each drink block and append them to the cocktail list to be displayed.
+    function renderDrinks(data) {
+        for (const drinkData of data['drinks']) {
+            if (!(drinkExists(drinkData))) {
+                const newDrinksOnDisplay = {...drinksOnDisplay}
+                newDrinksOnDisplay[drinkData['strDrink']] = true
+                setDrinksOnDisplay(newDrinksOnDisplay)
+
+                // Drink component created here.
+                const drink = <Drink drinkData={drinkData}/>
+                const newDrinkList = [...drinkList, drink]
+                setDrinkList(newDrinkList)
+            }
+        }
+    }
+
+    // Check if the given drink is already on the page.
+    function drinkExists(drink) {
+        const exists = drink['strDrink'] in drinksOnDisplay
+        if (exists)
+            console.log(`${drink['strDrink']} already exists on the page. Skipping.`)
+        return exists
     }
 
     function handleClearButton() {
@@ -38,7 +153,7 @@ export default function App() {
     }
 
     function clearScreen() {
-        setCocktailList([])
+        setDrinkList([])
     }
 
     function clearInput() {
@@ -46,10 +161,40 @@ export default function App() {
     }
 
     function handleEnterKeyDown(event) {
-        if (event.key === 'Enter') {
-            console.log("Enter key pressed")
+        if (event.key === 'Enter')
             getDrinks()
+    }
+
+    // Toggle the loading icon visibility.
+    function toggleLoadingIcon() {
+        loadingClassName === "lds-ellipsis" ?
+            setLoadingClassName("lds-ellipsis-active") :
+            setLoadingClassName("lds-ellipsis")
+    }
+
+    async function clickIngredient(event) {
+        // Search by ingredient just by clicking on the ingredient link.
+        if (event.target.tagName === 'A') {
+            const ingredientName = event.target.innerText
+            setSearchTerm(ingredientName)
+            await getDrinks(ingredientName)
         }
+        else
+            await toggleDrinkFocus(event.target)
+    }
+
+    // Enter and exit focus on a drink button.
+    // Scrolls to the drink button's current location on focus and unfocus.
+    async function toggleDrinkFocus(drink) {
+        drink.classList.toggle('viewing')
+        // Adding an arbitrary pause seems to eliminate most occurences of scrolling
+        // occasionally stopping abruptly when the user clicks on a drink button.
+        // TODO: Find a more programmatic solution to this :P
+        await wait(AUTOSCROLL_DELAY)
+        drink.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest'
+        })
     }
 
     // Ensures the search input is cleared when the user clicks the clear button.
@@ -77,7 +222,10 @@ export default function App() {
                     <section className="error-text"></section>
                 </header>
             </SearchNav>
-            <CocktailsView/>
+            <LoadingIcon className={loadingClassName}/>
+            <DrinksView>
+                {drinks}
+            </DrinksView>
             <FooterNav/>
         </>
     )
@@ -92,7 +240,7 @@ const SearchNav = (props) => {
     )
 }
 
-const CocktailsView = (props) => {
+const DrinksView = (props) => {
     return (
         <section className="cocktails-view">
             <LoadingIcon/>
@@ -106,7 +254,9 @@ const FooterNav = (props) => {
     return (
         <footer className="about">
             <p>© 2022 Drunkify | Design by
-                <a href="https://7minutes.dev" target="_blank" rel="noreferrer">7 Minutes Dev</a>
+                <a href="https://7minutes.dev" target="_blank" rel="noreferrer">
+                    7 Minutes Dev
+                </a>
             </p>
             <Counter/>
         </footer>
@@ -115,7 +265,7 @@ const FooterNav = (props) => {
 
 const LoadingIcon = (props) => {
     return (
-        <div className="lds-ellipsis">
+        <div className={props.className}>
             <div></div>
             <div></div>
             <div></div>
@@ -221,38 +371,3 @@ const ClearButton = (props) => {
 function wait(ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
-
-// // Get the drinks from the API and display them on screen.
-// // Clears any previously existing drinks on screen.
-// async function getDrinks(choice = null) {
-//     clearScreen()
-//     if (!choice)
-//         choice = sanitizeInput(searchInput.value)
-//
-//     // Store choice in localStorage to display as history.
-//     addSearchToLocalHistory(choice)
-//
-//     const drinkURL = `https://www.thecocktaildb.com/api/json/v1/1/search.php?s=${choice}`
-//     const ingredientURL = `https://www.thecocktaildb.com/api/json/v1/1/filter.php?i=${choice}`
-//
-//     errors.clearErrors()
-//     toggleLoadingIcon()
-//     const nameResponse = fetchDrinksByName(drinkURL)
-//     const ingredientResponse = await fetchDrinksByIngredient(ingredientURL)
-//     fetchedDrinks.push(nameResponse, ingredientResponse)
-//     // We should wait for all drink API fetches to complete successfully, otherwise
-//     // we run into issues where drinks are rendered before the API has responded,
-//     // resulting in empty spaces and missing drinks or information.
-//     Promise.allSettled(fetchedDrinks)
-//         .then(() => {
-//             setupDrinkListeners()
-//             revealDrinks()
-//             errors.renderErrors()
-//         })
-// }
-
-// Reset the page to its empty state.
-// function clearScreen() {
-//     cocktailList.innerHTML = ''
-//     drinksOnDisplay = {}
-// }
