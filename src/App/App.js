@@ -49,13 +49,14 @@ export default function App() {
         const nameResponse = fetchDrinksByName(drinkURL)
         // TODO: I don't think await is necessary here since we Promise.allSettled() later.
         const ingredientResponse = fetchDrinksByIngredient(ingredientURL)
-        setFetchedDrinks([nameResponse, ingredientResponse])
         // We should wait for all drink API fetches to complete successfully, otherwise
         // we run into issues where drinks are rendered before the API has responded,
         // resulting in empty spaces and missing drinks/information.
         await Promise.allSettled([nameResponse, ingredientResponse])
-         revealDrinks()
-         errors.renderErrors()
+        setFetchedDrinks([nameResponse, ingredientResponse])
+        console.log("Fetched drinks promises: ", fetchedDrinks)
+        revealDrinks()
+        errors.renderErrors()
     }
 
     async function revealDrinks() {
@@ -67,24 +68,28 @@ export default function App() {
     }
 
     async function fetchDrinksByIngredient(idURL) {
+        const newFetchedDrinks = [...fetchedDrinks]
         try {
-            console.log('Fetching drinks by ingredient...')
             const response = await fetch(idURL)
-            console.log(`Ingredient response: ${response.status}`)
             errors.storeError(response.status)
             const data = await response.json()
-            console.log(data)
+
             if (data['drinks']) {
                 for (const drink of data['drinks']) {
                     if (!(drinkExists(drink))) {
                         const idNumber = drink['idDrink']
                         const drinkURL = `https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i=${idNumber}`
-                        // If we were to await fetchDrinks here, each iteration of this loop will wait. May be useful in the future.
+                        // If we were to await fetchDrinks here, each iteration of this loop will wait.
                         // We should return this fetch response here to be used in collecting all Promises for
                         // Promise.all() to wait for in getDrinks().
-                        fetchedDrinks.push(fetchDrinksByName(drinkURL))
+                        // TODO: Potential state/await problem here.
+                        console.log('Fetching drink by ID from ingredient...')
+                        const newDrinkResponse = fetchDrinksByName(drinkURL)
+                        newFetchedDrinks.push(newDrinkResponse)
                     }
                 }
+                console.log("New fetched drinks: ", newFetchedDrinks)
+                setFetchedDrinks(newFetchedDrinks)
             }
             else {
                 errors.storeError(`Couldn't find "${searchTerm}" :(`)
@@ -105,9 +110,8 @@ export default function App() {
             errors.storeError(response.status)
 
             const data = await response.json()
-            console.log("Drink by name data:")
-            console.log(data)
             if (data['drinks']) {
+                console.log(`fetchDrinksByName:`, data['drinks'])
                 await renderDrinks(data)
             }
             else {
@@ -124,19 +128,21 @@ export default function App() {
     }
 
     // Create each drink block and append them to the cocktail list to be displayed.
-    function renderDrinks(data) {
+    async function renderDrinks(data) {
+        const newDrinkList = [...drinkList]
+        const newDrinksOnDisplay = {...drinksOnDisplay}
+
         for (const drinkData of data['drinks']) {
             if (!(drinkExists(drinkData))) {
-                const newDrinksOnDisplay = {...drinksOnDisplay}
                 newDrinksOnDisplay[drinkData['strDrink']] = true
-                setDrinksOnDisplay(newDrinksOnDisplay)
-
-                // Drink component created here.
-                const drink = <Drink drinkData={drinkData}/>
-                const newDrinkList = [...drinkList, drink]
-                setDrinkList(newDrinkList)
+                const drink = <Drink drinkData={drinkData} key={`${drinkData['idDrink']}`}/>
+                newDrinkList.push(drink)
             }
         }
+        // TODO: setDrinkList is being called multiple times before re-render, so it's not updating.
+        console.log("🐟 Updated drink list 🐟", newDrinkList, newDrinksOnDisplay)
+        setDrinkList(newDrinkList)
+        setDrinksOnDisplay(newDrinksOnDisplay)
     }
 
     // Check if the given drink is already on the page.
@@ -204,7 +210,6 @@ export default function App() {
     })
 
     return (
-        // Check out https://reactjs.org/docs/fragments.html
         <>
             <SearchNav>
                 <header className="nav">
