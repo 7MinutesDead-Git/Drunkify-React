@@ -2,16 +2,27 @@ import React, {useState, useEffect} from 'react'
 
 
 export default function Drink(props) {
-    // TODO: Need a props.clickIngredient function that makes a new API call when ingredient is clicked.
-
     // ----------------------------------------------------------------------------
     // API call results passed down as props.
     const drinkName = props.drinkData['strDrink']
     const drinkImageURL = props.drinkData['strDrinkThumb']
-    const instructions = props.drinkData['strInstructions'].map((instruction, index) => {
-        const instructionKey = `${drinkName}${instruction.slice(0, 4)}${index}`
-        return <p key={instructionKey}>{instruction}</p>
-    })
+    const instructions = props.drinkData['strInstructions']
+    // ----------------------------------------------------------------------------
+    // TODO: Need a props.clickIngredient function that makes a new API call when ingredient is clicked.
+    function getFormattedInstructions() {
+        const result = []
+        if (instructions) {
+            const array = instructions.split('.')
+            for (const instruction of array)
+                if (instruction.length > 0)
+                    result.push(<p>${instruction}.</p>)
+        }
+        else {
+            // TODO: Add button to open form to submit new instructions.
+            result.push(<p>No instructions found!</p>)
+        }
+        return result
+    }
 
     // ----------------------------------------------------------------------------
     return (
@@ -19,14 +30,30 @@ export default function Drink(props) {
             <img src={drinkImageURL} alt={drinkName}/>
             <h3>{drinkName}</h3>
             <Ingredients drinkData={props.drinkData} drinkName={drinkName} clickIngredient={props.clickIngredient}/>
-            <div className="instructions">
-                {instructions}
-            </div>
+            <Instructions>
+                {getFormattedInstructions()}
+            </Instructions>
         </>
     )
 }
 
-function Ingredients(props) {
+const Instructions = (props) => {
+    return (
+        <div className="instructions">
+            {props.children}
+        </div>
+    )
+}
+
+const Ingredient = (props) => {
+    return (
+        <li className="ingredient" key={props.uniqueKey}>
+            <span onClick={props.clickIngredient}>{props.ingredientName}</span>: {props.measurement}
+        </li>
+    )
+}
+
+const Ingredients = (props) => {
     function getIngredients() {
         const arrayOfIngredients = []
         const measurementPairs = {}
@@ -36,6 +63,7 @@ function Ingredients(props) {
         // NOTE: If the API ever stops returning ingredients before measurements in the future,
         //  we'll need to refactor this.
         // TODO: Refactor all of this to use React stuff.
+        let index = 0
         for (const key in props.drinkData) {
             const suffix = key.charAt(key.length - 1)
             if (key.includes('Ingredient') && drinkPropertyIsValid(key)) {
@@ -43,25 +71,28 @@ function Ingredients(props) {
             }
             if (key.includes('Measure') && drinkPropertyIsValid(key) && measurementPairs[suffix].length > 0) {
                 const measurement = props.drinkData[key]
-                const ingredient = (
-                    <li className="ingredient">
-                        <span onClick={props.clickIngredient}>{measurementPairs[suffix]}</span>: {measurement}
-                    </li>
+                const ingredientName = measurementPairs[suffix]
+                const uniqueKey = `${ingredientName}${index++}`
+                arrayOfIngredients.push(
+                    <Ingredient measurement={measurement}
+                                ingredientName={ingredientName}
+                                uniqueKey={uniqueKey}
+                                onClick={props.clickIngredient}
+                    />
                 )
-                arrayOfIngredients.push(ingredient)
             }
         }
         // If there are no ingredients, add a button for submitting new ingredients.
-        if (ingredients.length === 0) {
+        if (arrayOfIngredients.length === 0) {
             const missingIngredientOptions = (
                 <>
                     <li>No ingredients listed. Submit some!</li>
                     <button>Submit ingredient</button>
                 </>
             )
-            ingredients.push(missingIngredientOptions)
+            arrayOfIngredients.push(missingIngredientOptions)
         }
-        return ingredients
+        return arrayOfIngredients
     }
 
     // Check if given drink property key is not blank and not null.
@@ -69,21 +100,9 @@ function Ingredients(props) {
         return props.drinkData[key] !== null && props.drinkData[key].length > 0
     }
 
-    // TODO: Ingredients will be pairs of ingredient names and amounts.
-    //  This might require destructuring with Object.keys() or similar.. we'll see.
-    // const ingredients = getIngredients().map((ingredient, index) => {
-    //     const uniqueKey = `${props.drinkName}${ingredient}${index}`
-    //     return (
-    //         <li key={uniqueKey}>
-    //             <a href={ingredient}>{ingredient}</a>: {props.amounts[index]}
-    //         </li>
-    //     )
-    // })
-    const ingredients = getIngredients()
-
     return (
         <ul className="ingredients">
-            {ingredients}
+            {getIngredients()}
         </ul>
     )
 }
