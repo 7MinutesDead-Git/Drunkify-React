@@ -30,6 +30,8 @@ export default function App() {
     const [drinksOnDisplay, setDrinksOnDisplay] = useState({})
     const [drinks, setDrinks] = useState([])
 
+    console.log("Drinks on display: ", drinksOnDisplay)
+
     // searchTerm is grabbed from onChange event passed down to SearchInput.
     function updateSearchInput(event) {
         const newSearchTerm = sanitizeInput(event.target.value)
@@ -88,8 +90,7 @@ export default function App() {
                         newFetchedDrinks.push(newDrinkResponse)
                     }
                 }
-                console.log("New fetched drinks: ", newFetchedDrinks)
-                setFetchedDrinks(newFetchedDrinks)
+                await Promise.allSettled(newFetchedDrinks)
             }
             else {
                 errors.storeError(`Couldn't find "${searchTerm}" :(`)
@@ -160,6 +161,8 @@ export default function App() {
 
     function clearScreen() {
         setDrinkList([])
+        setFetchedDrinks([])
+        setDrinksOnDisplay({})
     }
 
     function clearInput() {
@@ -207,6 +210,10 @@ export default function App() {
     useEffect(() => {
         const input = document.querySelector('input')
         input.value = searchTerm
+
+        return () => {
+            input.value = ""
+        }
     })
 
     return (
@@ -229,7 +236,7 @@ export default function App() {
             </SearchNav>
             <LoadingIcon className={loadingClassName}/>
             <DrinksView>
-                {drinks}
+                {drinkList}
             </DrinksView>
             <FooterNav/>
         </>
@@ -250,7 +257,9 @@ const DrinksView = (props) => {
         <section className="cocktails-view">
             <LoadingIcon/>
             <div id="app-counter"></div>
-            <ul className="cocktails"></ul>
+            <ul className="cocktails">
+                {props.children}
+            </ul>
         </section>
     )
 }
